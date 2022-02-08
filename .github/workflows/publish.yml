@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   publish-hello-world-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
     - uses: actions/checkout@v2
@@ -16,9 +16,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build the hello-world Docker image
+    - name: Build and publish the hello-world Docker image
       run: |
-        docker build . --tag ghcr.io/jonashackt/hello-world:latest
-        docker run ghcr.io/jonashackt/hello-world:latest
-        docker push ghcr.io/jonashackt/hello-world:latest
+        docker build . --tag ghcr.io/${{ github.repository_owner }}/hello-world:latest
+        docker run ghcr.io/${{ github.repository_owner }}/hello-world:latest
+        docker push ghcr.io/${{ github.repository_owner }}/hello-world:latest
 

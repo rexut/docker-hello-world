@@ -1,5 +1,5 @@
 # docker-hello-world
-[![Build Status](https://github.com/jonashackt/docker-hello-world/workflows/publish/badge.svg)](https://github.com/jonashackt/docker-hello-world/actions)
+[![Build Status](https://github.com/rexut/docker-hello-world/workflows/publish/badge.svg)](https://github.com/rexut/docker-hello-world/actions)
 [![renovateenabled](https://img.shields.io/badge/renovate-enabled-yellow)](https://renovatebot.com)
 
 Example hello world container showing how to use GitHub Container Registry
@@ -20,7 +20,7 @@ Well I thought why not crafting a simple and small `hello-world` image and publi
 __TLDR;__ Simply run it with:
 
 ```shell
-docker run ghcr.io/jonashackt/hello-world
+docker run ghcr.io/rexut/hello-world
 ```
 
 ### A simple Go executable
@@ -153,15 +153,15 @@ or Alternatively we can also use the [docker/login-action](https://github.com/do
 The final step now is to push our container image to the GitHub Container Registry. Therefore we need to tag our image correctly while building it using `ghcr.io/OWNER/IMAGE_NAME:latest`. After that we can push it:
 
 ```yaml
-        docker build . --tag ghcr.io/jonashackt/hello-world:latest
-        docker run ghcr.io/jonashackt/hello-world:latest
-        docker push ghcr.io/jonashackt/hello-world:latest
+        docker build . --tag ghcr.io/${{ github.repository_owner }}/hello-world:latest
+        docker run ghcr.io/${{ github.repository_owner }}/hello-world:latest
+        docker push ghcr.io/${{ github.repository_owner }}/hello-world:latest
 ```
 
 To link our image to our GitHub repository (this isn't done automatically since images are treated as GH account global packages), we add a `LABEL` into our [Dockerfile](Dockerfile):
 
 ```dockerfile
-LABEL org.opencontainers.image.source="https://github.com/jonashackt/docker-hello-world"
+LABEL org.opencontainers.image.source="https://github.com/rexut/docker-hello-world"
 ```
 
 With this label the image package gets automatically linked to our repository:
@@ -177,7 +177,7 @@ And also the image becomes visible on our repositories main page:
 
 Per default our container image is private on GitHub Container Registry: https://docs.github.com/en/packages/guides/configuring-access-control-and-visibility-for-container-images
 
-To make it publicly accessible we need to move to our user account or orga page. For my account this is https://github.com/jonashackt?tab=packages
+To make it publicly accessible we need to move to our user account or orga page. For my account this is https://github.com/rexut?tab=packages
 
 ![user-account-packages](screenshots/user-account-packages.png)
 
@@ -188,7 +188,7 @@ Now click on the image published (which looks the same as a normal GH package) a
 We should finally be able to pull and run our image! Just run:
 
 ```shell
-docker pull ghcr.io/jonashackt/hello-world:latest
+docker pull ghcr.io/rexut/hello-world:latest
 
-docker run ghcr.io/jonashackt/hello-world:latest
+docker run ghcr.io/rexut/hello-world:latest
 ```
