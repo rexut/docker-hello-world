@@ -1,24 +1,68 @@
 name: publish
 
-on: [push]
+on:
+  push:
+    # Publish `adapt` as Docker `latest` image (see env.LATEST_BRANCH).
+    branches:
+      - adapt
+
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+
+  # Run tests for any PRs.
+  pull_request:
+
+env:
+  IMAGE_NAME: hello-world
+  LATEST_BRANCH: adapt
 
 jobs:
-  publish-hello-world-image:
+  # Publish image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  build-and-publish-image:
     runs-on: ubuntu-20.04
+    permissions:
+      packages: write
+      contents: read
 
     steps:
-    - uses: actions/checkout@v2
+      - name: Check-out Docker build environment
+        uses: actions/checkout@v2
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v1
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build the Docker image
+        run: |
+          docker build . --file Dockerfile --tag "${{ env.IMAGE_NAME }}:build" \
+            --label "org.opencontainers.image.source=${{ github.repositoryUrl }}" \
+            --label "runnumber=${{ github.run_id }}"
 
-    - name: Build and publish the hello-world Docker image
-      run: |
-        docker build . --tag ghcr.io/${{ github.repository_owner }}/hello-world:latest
-        docker run ghcr.io/${{ github.repository_owner }}/hello-world:latest
-        docker push ghcr.io/${{ github.repository_owner }}/hello-world:latest
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Publish the Docker image
+        env:
+          IMAGE_ID: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+        run: |
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo "${IMAGE_ID}" | tr '[A-Z]' '[a-z]')
+
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo "${VERSION}" | sed -e 's/^v//')
+
+          # Use Docker `latest` tag convention
+          [ "${VERSION}" == "${{ env.LATEST_BRANCH }}" ] && VERSION=latest
+
+          # Show meta data used for publishing
+          echo "IMAGE_ID=${IMAGE_ID}"
+          echo "VERSION=${VERSION}"
+
+          # Execute the publishing
+          docker tag "${{ env.IMAGE_NAME }}:build" "${IMAGE_ID}:${VERSION}"
+          docker push "${IMAGE_ID}:${VERSION}"
