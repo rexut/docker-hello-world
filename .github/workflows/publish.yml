@@ -30,20 +30,8 @@ jobs:
       - name: Check-out Docker build environment
         uses: actions/checkout@v2
 
-      - name: Build the Docker image
-        run: |
-          docker build . --file Dockerfile --tag "${{ env.IMAGE_NAME }}:build" \
-            --label "org.opencontainers.image.source=${{ github.repositoryUrl }}" \
-            --label "runnumber=${{ github.run_id }}"
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish the Docker image
+      - name: Metadata for the Docker image
+        id: meta
         env:
           IMAGE_ID: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
         run: |
@@ -59,10 +47,31 @@ jobs:
           # Use Docker `latest` tag convention
           [ "${VERSION}" == "${{ env.LATEST_BRANCH }}" ] && VERSION=latest
 
+          echo "::set-output name=image::$(echo ${IMAGE_ID})"
+          echo "::set-output name=version::$(echo ${VERSION})"
+
+      - name: Build the Docker image
+        run: |
+          docker build . --file Dockerfile --tag "${{ env.IMAGE_NAME }}:build" \
+            --label "org.opencontainers.image.source=${{ github.repositoryUrl }}" \
+            --label "runnumber=${{ github.run_id }}"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish the Docker image
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
           # Show meta data used for publishing
-          echo "IMAGE_ID=${IMAGE_ID}"
+          echo "IMAGE=${IMAGE}"
           echo "VERSION=${VERSION}"
 
           # Execute the publishing
-          docker tag "${{ env.IMAGE_NAME }}:build" "${IMAGE_ID}:${VERSION}"
-          docker push "${IMAGE_ID}:${VERSION}"
+          docker tag "${{ env.IMAGE_NAME }}:build" "${IMAGE}:${VERSION}"
+          docker push "${IMAGE}:${VERSION}"
