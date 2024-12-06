@@ -7,7 +7,7 @@ ADD hello-world.go /go/src/app
 RUN go build hello-world.go
 
 # We use a Docker multi-stage build here in order that we only take the compiled go executable
-FROM alpine:3.20
+FROM alpine:3.21
 
 COPY --from=0 "/go/src/app/hello-world" hello-world
 
